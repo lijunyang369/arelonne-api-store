@@ -1,6 +1,6 @@
-# api-store — HOPE Store API
+# api-store — Arelonne Store API（项目代号 HOPE）
 
-🇺🇸 AWS 部署。为前台 Next.js 提供商品浏览、下单、配置查询。
+🇺🇸 AWS 部署。为 Arelonne 前台提供商品浏览、下单、配置查询。
 
 ## 路由
 
