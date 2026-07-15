@@ -24,6 +24,7 @@ class Product extends Model
             'sale_price'  => 'decimal:2',
             'cost_price'  => 'decimal:2',
             'meta'        => 'array',
+            'sort'        => 'integer',
         ];
     }
 
@@ -44,10 +45,18 @@ class Product extends Model
     }
 
     /**
+     * 商品 SKC（按颜色）。
+     */
+    public function skcs(): HasMany
+    {
+        return $this->hasMany(ProductSkc::class);
+    }
+
+    /**
      * 商品图片。
      */
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class)->orderBy('sort')->orderBy('id');
+        return $this->hasMany(ProductImage::class);
     }
 }
