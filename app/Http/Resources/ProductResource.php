@@ -29,8 +29,9 @@ class ProductResource extends JsonResource
             'sale_price'  => $this->sale_price,
             'status'      => $this->status,
             'meta'        => $this->meta,
-            'variants'    => VariantResource::collection($this->whenLoaded('variants')),
-            'skcs'        => ProductSkcResource::collection($this->whenLoaded('skcs')),
+            'primary_skc_id' => $this->primary_skc_id,
+            'variants'       => VariantResource::collection($this->whenLoaded('variants')),
+            'skcs'           => ProductSkcResource::collection($this->whenLoaded('skcs')),
             'created_at'  => $this->created_at?->toIso8601String(),
         ];
     }

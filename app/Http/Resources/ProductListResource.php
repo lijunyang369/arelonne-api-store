@@ -20,9 +20,8 @@ class ProductListResource extends JsonResource
             'base_price' => $this->base_price,
             'sale_price' => $this->sale_price,
             'status'     => $this->status,
-            'image'      => $this->whenLoaded('images',
-                fn () => $this->images->where('is_primary', true)->first()?->url
-                    ?? $this->images->first()?->url
+            'image'      => $this->whenLoaded('primarySkc',
+                fn () => $this->primarySkc?->images()?->orderBy('sort')->value('url')
             ),
         ];
     }

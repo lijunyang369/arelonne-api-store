@@ -21,7 +21,7 @@ class ProductController extends Controller
     {
         $query = Product::query()
             ->where('status', 'active')
-            ->with(['category', 'images']);
+            ->with(['category', 'primarySkc.images']);
 
         // 按分类筛选
         if ($category = $request->get('category')) {
@@ -72,7 +72,7 @@ class ProductController extends Controller
     {
         $product = Product::where('slug', $slug)
             ->where('status', 'active')
-            ->with(['category', 'variants', 'skcs.images'])
+            ->with(['category', 'variants', 'skcs.images', 'primarySkc.images'])
             ->first();
 
         if (! $product) {

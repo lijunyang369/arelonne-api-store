@@ -119,30 +119,33 @@ class ProductSyncController extends Controller
     /**
      * 接收 🇨🇳 Admin 推送的 SKC 颜色和图片同步。
      */
-    public function syncSkcs(int $productId, Request $request): JsonResponse
+    public function syncSkcs(int $id, Request $request): JsonResponse
     {
         $data = $request->validate([
             'skcs' => 'required|array',
         ]);
 
-        $product = Product::find($productId);
+        $product = Product::find($id);
         if (! $product) {
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        // SKC + 图片全量替换
-        $product->skcs()->delete(); // cascade 删除关联图片
+        // SKC + 图片全量替换：先物理删除旧数据（skip soft-delete to avoid unique collision）
+        $product->skcs()->forceDelete(); // cascade 删除关联 images
         foreach ($data['skcs'] as $s) {
-            $skc = $product->skcs()->create([
-                'id'        => $s['id'] ?? null,
-                'color'     => $s['color'],
-                'color_hex' => $s['color_hex'] ?? null,
-                'slug'      => $s['slug'],
-                'sort'      => $s['sort'] ?? 0,
-                'status'    => $s['status'] ?? 'active',
-            ]);
+            $skc = $product->skcs()->updateOrCreate(
+                ['product_id' => $product->id, 'color' => $s['color']],
+                [
+                    'color_hex' => $s['color_hex'] ?? null,
+                    'slug'      => $s['slug'],
+                    'sort'      => $s['sort'] ?? 0,
+                    'status'    => $s['status'] ?? 'active',
+                    'deleted_at' => null,
+                ]
+            );
 
             if (! empty($s['images'])) {
+                $skc->images()->delete();
                 foreach ($s['images'] as $img) {
                     $skc->images()->create([
                         'product_id' => $product->id,
