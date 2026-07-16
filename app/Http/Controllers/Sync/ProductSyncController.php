@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductSkc;
 use App\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -113,6 +114,50 @@ class ProductSyncController extends Controller
         Log::info("[Sync] 商品 #{$product->id} 变体/图片同步: " . count($data['variants']) . ' variants');
 
         return response()->json(['message' => 'Variants synced.'], 200);
+    }
+
+    /**
+     * 接收 🇨🇳 Admin 推送的 SKC 颜色和图片同步。
+     */
+    public function syncSkcs(int $productId, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'skcs' => 'required|array',
+        ]);
+
+        $product = Product::find($productId);
+        if (! $product) {
+            return response()->json(['message' => 'Product not found.'], 404);
+        }
+
+        // SKC + 图片全量替换
+        $product->skcs()->delete(); // cascade 删除关联图片
+        foreach ($data['skcs'] as $s) {
+            $skc = $product->skcs()->create([
+                'id'        => $s['id'] ?? null,
+                'color'     => $s['color'],
+                'color_hex' => $s['color_hex'] ?? null,
+                'slug'      => $s['slug'],
+                'sort'      => $s['sort'] ?? 0,
+                'status'    => $s['status'] ?? 'active',
+            ]);
+
+            if (! empty($s['images'])) {
+                foreach ($s['images'] as $img) {
+                    $skc->images()->create([
+                        'product_id' => $product->id,
+                        'url'        => $img['url'],
+                        'alt'        => $img['alt'] ?? null,
+                        'sort'       => $img['sort'] ?? 0,
+                        'is_primary' => $img['is_primary'] ?? false,
+                    ]);
+                }
+            }
+        }
+
+        Log::info("[Sync] 商品 #{$product->id} SKC 同步: " . count($data['skcs']) . ' SKCs');
+
+        return response()->json(['message' => 'SKCs synced.'], 200);
     }
 
     /**

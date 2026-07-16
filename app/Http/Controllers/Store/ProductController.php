@@ -72,7 +72,7 @@ class ProductController extends Controller
     {
         $product = Product::where('slug', $slug)
             ->where('status', 'active')
-            ->with(['category', 'variants', 'images'])
+            ->with(['category', 'variants', 'skcs.images'])
             ->first();
 
         if (! $product) {

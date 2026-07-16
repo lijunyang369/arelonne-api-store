@@ -19,6 +19,7 @@ Route::prefix('sync')->name('sync.')->middleware([
     Route::post('products', [ProductSyncController::class, 'store']);
     Route::delete('products/{id}', [ProductSyncController::class, 'destroy']);
     Route::post('products/{id}/variants', [ProductSyncController::class, 'syncVariants']);
+    Route::post('products/{id}/skcs', [ProductSyncController::class, 'syncSkcs']);
 
     // 颜色同步（🇨🇳 → 🇺🇸）
     Route::post('colors', [ColorSyncController::class, 'store']);
