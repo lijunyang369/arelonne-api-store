@@ -14,6 +14,8 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('categories', [\App\Http\Controllers\Store\CategoryController::class, 'index']);
     Route::get('colors', [\App\Http\Controllers\Store\ColorController::class, 'index']);
     Route::get('size-guide', [\App\Http\Controllers\Store\SizeGuideController::class, 'show']);
+    Route::get('cart', [\App\Http\Controllers\Store\CartController::class, 'show']);
+    Route::post('cart/sync', [\App\Http\Controllers\Store\CartController::class, 'sync']);
     Route::post('cart/calculate', [\App\Http\Controllers\Store\CartController::class, 'calculate']);
     Route::post('orders', [\App\Http\Controllers\Store\OrderController::class, 'store']);
     Route::get('orders/{orderNo}', [\App\Http\Controllers\Store\OrderController::class, 'show']);
