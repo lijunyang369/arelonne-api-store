@@ -40,7 +40,8 @@ class CartService
             $cart->items()->create([
                 'product_id'         => $variant->product_id,
                 'product_variant_id' => $variantId,
-                'quantity'           => $quantity,
+                // 与 calculate 保持一致：数量至少为 1
+                'quantity'           => max(1, (int) $quantity),
             ]);
         }
 
