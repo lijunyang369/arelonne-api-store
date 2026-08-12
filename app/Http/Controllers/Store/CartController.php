@@ -24,9 +24,9 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'guest_id'        => 'required|string|max:64',
-            'items'           => 'required|array',
+            'items'           => 'required|array|max:50',
             'items.*.variant_id' => 'required|integer|exists:product_variants,id',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.quantity'   => 'required|integer|min:1|max:99',
         ]);
 
         $result = $this->cartService->sync($data['guest_id'], $data['items']);
@@ -68,9 +68,9 @@ class CartController extends Controller
     public function calculate(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'items'           => 'required|array',
+            'items'           => 'required|array|max:50',
             'items.*.variant_id' => 'required|integer|exists:product_variants,id',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.quantity'   => 'required|integer|min:1|max:99',
         ]);
 
         $result = $this->cartService->calculate($data['items']);
