@@ -9,6 +9,7 @@
 use App\Http\Controllers\Sync\ColorSyncController;
 use App\Http\Controllers\Sync\OrderSyncController;
 use App\Http\Controllers\Sync\ProductSyncController;
+use App\Http\Controllers\Sync\SettingSyncController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('sync')->name('sync.')->middleware([
@@ -25,6 +26,9 @@ Route::prefix('sync')->name('sync.')->middleware([
     Route::post('colors', [ColorSyncController::class, 'store']);
     Route::put('colors/{id}', [ColorSyncController::class, 'update']);
     Route::delete('colors/{id}', [ColorSyncController::class, 'destroy']);
+
+    // 设置同步（🇨🇳 → 🇺🇸）
+    Route::post('settings', [SettingSyncController::class, 'store']);
 
     // 订单同步（🇺🇸 → 🇨🇳）
     Route::post('orders', [OrderSyncController::class, 'store']);
