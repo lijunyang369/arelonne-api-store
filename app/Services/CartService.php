@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
+use App\Models\Setting;
 
 class CartService
 {
@@ -103,7 +104,11 @@ class CartService
             ];
         }
 
-        $shipping = $subtotal >= 50 ? 0 : 5.99;
+        // 运费规则来自后台设置（缺失时回退默认值）
+        $threshold = (float) Setting::getValue('shipping.free_threshold', 50);
+        $fee       = (float) Setting::getValue('shipping.fee', 5.99);
+
+        $shipping = $subtotal >= $threshold ? 0 : $fee;
         $total = $subtotal + $shipping;
 
         return [
@@ -111,7 +116,7 @@ class CartService
             'subtotal'                 => number_format($subtotal, 2, '.', ''),
             'shipping'                 => number_format($shipping, 2, '.', ''),
             'total'                    => number_format($total, 2, '.', ''),
-            'free_shipping_threshold'  => 50.00,
+            'free_shipping_threshold'  => $threshold,
         ];
     }
 

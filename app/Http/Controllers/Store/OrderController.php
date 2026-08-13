@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Store;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Models\Setting;
 use App\Services\SyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,8 +54,10 @@ class OrderController extends Controller
                 $subtotal += $price * $qty;
             }
 
-            // 运费（MVP：$50 以上免运费，否则 $5.99）
-            $shippingFee = $subtotal >= 50 ? 0 : 5.99;
+            // 运费规则来自后台设置（缺失时回退默认值）
+            $threshold  = (float) Setting::getValue('shipping.free_threshold', 50);
+            $fee        = (float) Setting::getValue('shipping.fee', 5.99);
+            $shippingFee = $subtotal >= $threshold ? 0 : $fee;
 
             // 生成订单号
             $orderNo = 'HLP-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
