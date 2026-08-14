@@ -20,6 +20,8 @@ class SettingSyncController extends Controller
             'settings'           => 'required|array',
             'settings.*.key'     => 'required|string|max:255',
             'settings.*.value'   => 'required',
+            // type 必须有规则才会出现在 validated() 结果中
+            'settings.*.type'    => 'nullable|string',
         ]);
 
         // 值仅支持标量（字符串/数字/布尔），数组/对象直接拒绝，避免 (string) 强转产生脏数据
@@ -49,9 +51,11 @@ class SettingSyncController extends Controller
         foreach ($data['settings'] as $item) {
             $key   = $item['key'];
             $value = $item['value'];
+            // 信任 Admin 发送的 type（保留布尔语义），缺失时本地推导
+            $sentType = $item['type'] ?? null;
             // group 取 key 前缀（如 "shipping.fee" → "shipping"）
             $group = str_contains($key, '.') ? explode('.', $key)[0] : 'general';
-            $type  = is_bool($value) ? 'boolean' : (is_numeric($value) ? 'number' : 'string');
+            $type  = $sentType ?: (is_bool($value) ? 'boolean' : (is_numeric($value) ? 'number' : 'string'));
 
             Setting::updateOrCreate(
                 ['key' => $key],
