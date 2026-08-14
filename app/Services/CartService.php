@@ -37,8 +37,9 @@ class CartService
             $locked->items()->delete();
 
             foreach ($deduped as $variantId => $quantity) {
-                $variant = ProductVariant::with('product')->find($variantId);
-                if (! $variant || ! $variant->product) {
+                $variant = ProductVariant::find($variantId);
+                $product = $variant?->product()->withTrashed()->first();
+                if (! $variant || ! $product) {
                     continue;
                 }
 
