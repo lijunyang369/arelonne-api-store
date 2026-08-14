@@ -24,7 +24,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'guest_id'        => 'required|string|max:64',
-            'items'           => 'required|array|max:50',
+            'items'           => 'present|array|max:50',
             'items.*.variant_id' => 'required|integer|exists:product_variants,id',
             'items.*.quantity'   => 'required|integer|min:1|max:99',
         ]);
@@ -69,7 +69,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'items'           => 'required|array|max:50',
-            'items.*.variant_id' => 'required|integer|exists:product_variants,id',
+            'items.*.variant_id' => 'required|integer',
             'items.*.quantity'   => 'required|integer|min:1|max:99',
         ]);
 
