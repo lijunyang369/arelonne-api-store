@@ -24,7 +24,8 @@ class SettingSyncController extends Controller
 
         // 运费设置必须为非负数（key 前缀 shipping. 的数值配置）
         foreach ($data['settings'] as $item) {
-            if (str_starts_with($item['key'], 'shipping.') && (! is_numeric($item['value']) || (float) $item['value'] < 0)) {
+            if (str_starts_with($item['key'], 'shipping.') &&
+                (! is_numeric($item['value']) || ! is_finite((float) $item['value']) || (float) $item['value'] < 0 || (float) $item['value'] > 100000)) {
                 return response()->json([
                     'message' => 'Shipping settings must be non-negative numbers.',
                     'errors'  => [$item['key'] => ['Shipping settings must be non-negative numbers.']],
