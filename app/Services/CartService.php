@@ -95,7 +95,7 @@ class CartService
 
             $price = 0;
             if ($available) {
-                $price = (float) ($variant->price ?? $variant->product->sale_price ?? $variant->product->base_price);
+                $price = (float) ($variant->product->sale_price ?? $variant->price ?? $variant->product->base_price);
             }
 
             $qty = max(1, (int) ($input['quantity'] ?? 1));
@@ -135,7 +135,7 @@ class CartService
         $items = $cart->items->map(function (CartItem $item) {
             $variant = $item->productVariant;
             $product = $variant?->product;
-            $price = (float) ($variant->price ?? $product?->sale_price ?? $product?->base_price ?? 0);
+            $price = (float) ($product?->sale_price ?? $variant->price ?? $product?->base_price ?? 0);
 
             // 按变体颜色匹配 SKC 图片（无匹配时回退主色 SKC）
             $imageUrl = null;
