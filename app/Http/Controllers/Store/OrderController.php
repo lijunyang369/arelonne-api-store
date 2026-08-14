@@ -37,7 +37,7 @@ class OrderController extends Controller
 
             foreach ($data['items'] as $input) {
                 $variant = ProductVariant::find($input['variant_id']);
-                $price = (float) ($variant->price ?? $variant->product->base_price);
+                $price = (float) ($variant->price ?? $variant->product->sale_price ?? $variant->product->base_price);
                 $qty = $input['quantity'];
 
                 $items[] = [
