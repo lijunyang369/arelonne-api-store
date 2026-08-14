@@ -89,6 +89,15 @@ class ProductSyncController extends Controller
         foreach ($data['variants'] as $v) {
             $color = $v['color'] ?? '';
             $size  = $v['size'] ?? '';
+
+            // 若 SKU 被其他产品的变体占用，先释放（追加后缀），避免唯一索引冲突
+            $owner = ProductVariant::where('sku', $v['sku'])
+                ->where('product_id', '!=', $product->id)
+                ->first();
+            if ($owner) {
+                $owner->update(['sku' => $v['sku'] . '-legacy-' . $owner->id]);
+            }
+
             ProductVariant::updateOrCreate(
                 ['product_id' => $product->id, 'color' => $color, 'size' => $size],
                 [
