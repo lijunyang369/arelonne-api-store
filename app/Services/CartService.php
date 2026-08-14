@@ -53,7 +53,12 @@ class CartService
             return $locked;
         });
 
-        return $this->buildCartData($cart->fresh(['items.productVariant.product.category', 'items.productVariant.product.skcs.images', 'items.productVariant.product.primarySkc.images']));
+        return $this->buildCartData($cart->fresh([
+            'items.productVariant.product' => fn ($q) => $q->withTrashed(),
+            'items.productVariant.product.category',
+            'items.productVariant.product.skcs.images',
+            'items.productVariant.product.primarySkc.images',
+        ]));
     }
 
     /**
@@ -69,7 +74,12 @@ class CartService
             return null;
         }
 
-        return $this->buildCartData($cart->load(['items.productVariant.product.category', 'items.productVariant.product.skcs.images', 'items.productVariant.product.primarySkc.images']));
+        return $this->buildCartData($cart->load([
+            'items.productVariant.product' => fn ($q) => $q->withTrashed(),
+            'items.productVariant.product.category',
+            'items.productVariant.product.skcs.images',
+            'items.productVariant.product.primarySkc.images',
+        ]));
     }
 
     /**
