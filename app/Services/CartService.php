@@ -30,7 +30,12 @@ class CartService
 
         // 事务内全量替换：删除旧明细，写入新明细，并锁定购物车行防止并发同步交错
         $cart = DB::transaction(function () use ($guestId, $deduped) {
-            $cart = Cart::firstOrCreate(['guest_id' => $guestId]);
+            try {
+                $cart = Cart::firstOrCreate(['guest_id' => $guestId]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // 并发首次创建冲突：唯一索引竞争下重新查询已有行
+                $cart = Cart::where('guest_id', $guestId)->firstOrFail();
+            }
             // 锁定购物车行，防止并发同步交错
             $locked = Cart::whereKey($cart->id)->lockForUpdate()->first();
 
