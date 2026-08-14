@@ -22,6 +22,19 @@ class SettingSyncController extends Controller
             'settings.*.value'   => 'required',
         ]);
 
+        // 值仅支持标量（字符串/数字/布尔），数组/对象直接拒绝，避免 (string) 强转产生脏数据
+        foreach ($data['settings'] as $item) {
+            $key   = $item['key'];
+            $value = $item['value'];
+
+            if (! is_scalar($value)) {
+                return response()->json([
+                    'message' => 'Setting values must be scalar.',
+                    'errors'  => [$key => ['Setting values must be scalar.']],
+                ], 422);
+            }
+        }
+
         // 运费设置必须为非负数（key 前缀 shipping. 的数值配置）
         foreach ($data['settings'] as $item) {
             if (str_starts_with($item['key'], 'shipping.') &&
