@@ -10,7 +10,6 @@ use App\Models\ProductSkc;
 use App\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ProductSyncController extends Controller
@@ -87,11 +86,9 @@ class ProductSyncController extends Controller
         }
 
         // 变体按 (product_id, color, size) 业务键 upsert（SKU 可变，ID 稳定，避免唯一索引冲突）
-        $incomingKeys = [];
         foreach ($data['variants'] as $v) {
             $color = $v['color'] ?? '';
             $size  = $v['size'] ?? '';
-            $incomingKeys[] = $color . '|' . $size;
             ProductVariant::updateOrCreate(
                 ['product_id' => $product->id, 'color' => $color, 'size' => $size],
                 [
@@ -103,13 +100,18 @@ class ProductSyncController extends Controller
             );
         }
 
-        // 删除本次载荷中不存在的变体（真正被移除的组合）
-        if (empty($incomingKeys)) {
-            $product->variants()->delete();
-        } else {
-            $product->variants()
-                ->whereNotIn(DB::raw("CONCAT(COALESCE(color,''), '|', COALESCE(size,''))"), $incomingKeys)
-                ->delete();
+        // 删除本次载荷中不存在的变体：PHP 侧按业务键 diff（\0 分隔符，值中不会出现）
+        $existing = $product->variants()->get(['id', 'color', 'size']);
+        $incomingSet = [];
+        foreach ($data['variants'] as $v) {
+            $incomingSet[($v['color'] ?? '') . "\0" . ($v['size'] ?? '')] = true;
+        }
+        $toDelete = $existing
+            ->filter(fn ($variant) => ! isset($incomingSet[$variant->color . "\0" . $variant->size]))
+            ->pluck('id');
+
+        if ($toDelete->isNotEmpty()) {
+            ProductVariant::whereIn('id', $toDelete)->delete();
         }
 
         // 图片全量替换
