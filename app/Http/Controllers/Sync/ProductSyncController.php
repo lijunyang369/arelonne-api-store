@@ -85,18 +85,25 @@ class ProductSyncController extends Controller
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        // 变体全量替换
-        $product->variants()->delete();
+        // 变体按 SKU upsert（保留未变化变体的 ID，避免 CASCADE 误删购物车行）
+        $incomingSkus = [];
         foreach ($data['variants'] as $v) {
-            $product->variants()->create([
-                'sku'   => $v['sku'],
-                'color' => $v['color'] ?? '',
-                'size'  => $v['size'] ?? '',
-                'price' => $v['price'] ?? null,
-                'stock' => $v['stock'] ?? 0,
-                'image' => $v['image'] ?? null,
-            ]);
+            $incomingSkus[] = $v['sku'];
+            ProductVariant::updateOrCreate(
+                ['sku' => $v['sku']],
+                [
+                    'product_id' => $product->id,
+                    'color' => $v['color'] ?? '',
+                    'size'  => $v['size'] ?? '',
+                    'price' => $v['price'] ?? null,
+                    'stock' => $v['stock'] ?? 0,
+                    'image' => $v['image'] ?? null,
+                ]
+            );
         }
+
+        // 删除本次载荷中不存在的变体（真正被移除的 SKU）
+        $product->variants()->whereNotIn('sku', $incomingSkus)->delete();
 
         // 图片全量替换
         if (isset($data['images'])) {
