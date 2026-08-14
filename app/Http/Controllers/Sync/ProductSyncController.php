@@ -10,6 +10,7 @@ use App\Models\ProductSkc;
 use App\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ProductSyncController extends Controller
@@ -85,16 +86,16 @@ class ProductSyncController extends Controller
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        // 变体按 SKU upsert（保留未变化变体的 ID，避免 CASCADE 误删购物车行）
-        $incomingSkus = [];
+        // 变体按 (product_id, color, size) 业务键 upsert（SKU 可变，ID 稳定，避免唯一索引冲突）
+        $incomingKeys = [];
         foreach ($data['variants'] as $v) {
-            $incomingSkus[] = $v['sku'];
+            $color = $v['color'] ?? '';
+            $size  = $v['size'] ?? '';
+            $incomingKeys[] = $color . '|' . $size;
             ProductVariant::updateOrCreate(
-                ['sku' => $v['sku']],
+                ['product_id' => $product->id, 'color' => $color, 'size' => $size],
                 [
-                    'product_id' => $product->id,
-                    'color' => $v['color'] ?? '',
-                    'size'  => $v['size'] ?? '',
+                    'sku'   => $v['sku'],
                     'price' => $v['price'] ?? null,
                     'stock' => $v['stock'] ?? 0,
                     'image' => $v['image'] ?? null,
@@ -102,8 +103,14 @@ class ProductSyncController extends Controller
             );
         }
 
-        // 删除本次载荷中不存在的变体（真正被移除的 SKU）
-        $product->variants()->whereNotIn('sku', $incomingSkus)->delete();
+        // 删除本次载荷中不存在的变体（真正被移除的组合）
+        if (empty($incomingKeys)) {
+            $product->variants()->delete();
+        } else {
+            $product->variants()
+                ->whereNotIn(DB::raw("CONCAT(COALESCE(color,''), '|', COALESCE(size,''))"), $incomingKeys)
+                ->delete();
+        }
 
         // 图片全量替换
         if (isset($data['images'])) {
