@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 
 class CartService
 {
@@ -21,32 +22,38 @@ class CartService
      */
     public function sync(string $guestId, array $items): array
     {
-        $cart = Cart::firstOrCreate(['guest_id' => $guestId]);
-
         // 去重：同一 variant_id 只保留最后一次
         $deduped = [];
         foreach ($items as $item) {
             $deduped[$item['variant_id']] = $item['quantity'];
         }
 
-        // 全量替换：删除旧明细，写入新明细
-        $cart->items()->delete();
+        // 事务内全量替换：删除旧明细，写入新明细，并锁定购物车行防止并发同步交错
+        $cart = DB::transaction(function () use ($guestId, $deduped) {
+            $cart = Cart::firstOrCreate(['guest_id' => $guestId]);
+            // 锁定购物车行，防止并发同步交错
+            $locked = Cart::whereKey($cart->id)->lockForUpdate()->first();
 
-        foreach ($deduped as $variantId => $quantity) {
-            $variant = ProductVariant::with('product')->find($variantId);
-            if (! $variant || ! $variant->product) {
-                continue;
+            $locked->items()->delete();
+
+            foreach ($deduped as $variantId => $quantity) {
+                $variant = ProductVariant::with('product')->find($variantId);
+                if (! $variant || ! $variant->product) {
+                    continue;
+                }
+
+                $locked->items()->create([
+                    'product_id'         => $variant->product_id,
+                    'product_variant_id' => $variantId,
+                    // 与 calculate 保持一致：数量至少为 1
+                    'quantity'           => max(1, (int) $quantity),
+                ]);
             }
 
-            $cart->items()->create([
-                'product_id'         => $variant->product_id,
-                'product_variant_id' => $variantId,
-                // 与 calculate 保持一致：数量至少为 1
-                'quantity'           => max(1, (int) $quantity),
-            ]);
-        }
+            return $locked;
+        });
 
-        return $this->buildCartData($cart->fresh(['items.productVariant.product.category', 'items.productVariant.product.primarySkc.images']));
+        return $this->buildCartData($cart->fresh(['items.productVariant.product.category', 'items.productVariant.product.skcs.images', 'items.productVariant.product.primarySkc.images']));
     }
 
     /**
@@ -62,7 +69,7 @@ class CartService
             return null;
         }
 
-        return $this->buildCartData($cart->load(['items.productVariant.product.category', 'items.productVariant.product.primarySkc.images']));
+        return $this->buildCartData($cart->load(['items.productVariant.product.category', 'items.productVariant.product.skcs.images', 'items.productVariant.product.primarySkc.images']));
     }
 
     /**
@@ -88,7 +95,7 @@ class CartService
 
             $price = 0;
             if ($available) {
-                $price = (float) ($variant->price ?? $variant->product->base_price);
+                $price = (float) ($variant->price ?? $variant->product->sale_price ?? $variant->product->base_price);
             }
 
             $qty = max(1, (int) ($input['quantity'] ?? 1));
@@ -128,13 +135,13 @@ class CartService
         $items = $cart->items->map(function (CartItem $item) {
             $variant = $item->productVariant;
             $product = $variant?->product;
-            $price = (float) ($variant->price ?? $product?->base_price ?? 0);
+            $price = (float) ($variant->price ?? $product?->sale_price ?? $product?->base_price ?? 0);
 
-            // 通过 product.primarySkc 获取首图（该颜色的第一张图）
+            // 按变体颜色匹配 SKC 图片（无匹配时回退主色 SKC）
             $imageUrl = null;
-            $primarySkc = $product?->primarySkc;
-            if ($primarySkc && $primarySkc->images->isNotEmpty()) {
-                $imageUrl = $primarySkc->images->first()->url;
+            $skc = $product?->skcs?->firstWhere('color', $variant?->color) ?? $product?->primarySkc;
+            if ($skc && $skc->images->isNotEmpty()) {
+                $imageUrl = $skc->images->first()->url;
             }
 
             return [
@@ -149,6 +156,7 @@ class CartService
                 'price'         => number_format($price, 2, '.', ''),
                 'image_url'     => $imageUrl,
                 'quantity'      => $item->quantity,
+                'stock'         => $variant?->stock ?? 0,
             ];
         });
 
