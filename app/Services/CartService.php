@@ -92,7 +92,7 @@ class CartService
      * 验价并计算购物车总价。
      *
      * 服务端重新查价，不信任客户端传入的价格。
-     * 运费规则：满 $50 免运费，否则 $5.99。
+     * 运费规则：满 $69 免运费，否则 $8.99。
      *
      * @param  array  $items  [['variant_id' => int, 'quantity' => int], ...]
      * @return array
@@ -128,8 +128,8 @@ class CartService
         }
 
         // 运费规则来自后台设置（缺失时回退默认值）
-        $threshold = (float) Setting::getValue('shipping.free_threshold', 50);
-        $fee       = (float) Setting::getValue('shipping.fee', 5.99);
+        $threshold = (float) Setting::getValue('shipping.free_threshold', 69);
+        $fee       = (float) Setting::getValue('shipping.fee', 8.99);
 
         $shipping = $subtotal >= $threshold ? 0 : $fee;
         $total = $subtotal + $shipping;
