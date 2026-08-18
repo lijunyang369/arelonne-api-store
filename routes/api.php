@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\Route;
 // API Store — 前台 API（🇺🇸 部署）
 // =========================================================================
 
-require __DIR__ . '/sync.php';
-
 Route::prefix('store')->name('store.')->group(function () {
     Route::get('products', [\App\Http\Controllers\Store\ProductController::class, 'index']);
     Route::get('products/{slug}', [\App\Http\Controllers\Store\ProductController::class, 'show']);

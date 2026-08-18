@@ -12,10 +12,9 @@ class ContactMessageService
     private const SUPPORT_EMAIL = 'support@arelonne.com';
 
     /**
-     * 提交留言：落库、发通知邮件、同步到 🇨🇳 Admin。
+     * 提交留言：落库并发通知邮件。
      *
-     * 邮件与同步均不阻塞结果：消息已持久化，且 Admin 侧有镜像，
-     * 任一通知通道失败都不会丢失留言（失败只记日志）。
+     * 单库架构下 Admin 直接读共享库，邮件失败只记日志、不阻塞结果。
      */
     public static function submit(array $data): ContactMessage
     {
@@ -39,9 +38,6 @@ class ContactMessageService
             . "Reason: {$contact->reason}\n\n"
             . "Message:\n{$contact->message}",
         );
-
-        // 同步到 🇨🇳 Admin（与订单同一通道；邮件失败时留言仍可靠到达客服）
-        SyncService::pushAsync('/contacts', $contact->toArray(), 'POST', 'admin');
 
         return $contact;
     }

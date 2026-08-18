@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\Setting;
-use App\Services\SyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +15,7 @@ class OrderController extends Controller
     /**
      * 创建订单（Guest Checkout）。
      *
-     * 写入 🇺🇸 本地 DB 后，推送到 🇨🇳 Admin 供运营处理。
+     * 写入共享库，Admin 直接读库供运营处理。
      */
     public function store(Request $request): JsonResponse
     {
@@ -84,9 +83,6 @@ class OrderController extends Controller
 
             return $order;
         });
-
-        // 推送到 🇨🇳 Admin
-        SyncService::pushAsync('/orders', $order->load('items')->toArray(), 'POST', 'admin');
 
         return response()->json([
             'data' => [
