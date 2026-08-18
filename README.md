@@ -1,6 +1,6 @@
 # api-store — Arelonne Store API（项目代号 HOPE）
 
-🇺🇸 AWS 部署。为 Arelonne 前台提供商品浏览、下单、配置查询。
+🇺🇸 AWS 部署。为 Arelonne 前台提供商品浏览、下单、配置查询。与 api-admin 共用同一台 🇺🇸 MySQL（单库单区域，无同步层）。
 
 ## 路由
 
@@ -13,8 +13,6 @@
 | POST | /api/store/orders | 创建订单 |
 | GET | /api/store/orders/{orderNo} | 订单查询 |
 | GET | /api/store/settings | 站点配置 |
-| POST | /api/sync/products | 接收商品同步 |
-| POST | /api/sync/orders | 接收订单同步 |
 
 ## 技术栈
 
