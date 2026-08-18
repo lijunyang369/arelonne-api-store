@@ -55,8 +55,8 @@ class OrderController extends Controller
             }
 
             // 运费规则来自后台设置（缺失时回退默认值）
-            $threshold  = (float) Setting::getValue('shipping.free_threshold', 50);
-            $fee        = (float) Setting::getValue('shipping.fee', 5.99);
+            $threshold  = (float) Setting::getValue('shipping.free_threshold', 69);
+            $fee        = (float) Setting::getValue('shipping.fee', 8.99);
             $shippingFee = $subtotal >= $threshold ? 0 : $fee;
 
             // 生成订单号

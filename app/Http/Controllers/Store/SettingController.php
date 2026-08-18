@@ -15,8 +15,8 @@ class SettingController extends Controller
     {
         return response()->json([
             'data' => [
-                'free_shipping_threshold' => (float) Setting::getValue('shipping.free_threshold', 50),
-                'shipping_fee'            => (float) Setting::getValue('shipping.fee', 5.99),
+                'free_shipping_threshold' => (float) Setting::getValue('shipping.free_threshold', 69),
+                'shipping_fee'            => (float) Setting::getValue('shipping.fee', 8.99),
             ],
         ]);
     }
