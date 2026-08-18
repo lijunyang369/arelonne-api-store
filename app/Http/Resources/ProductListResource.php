@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\ImageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,9 +21,9 @@ class ProductListResource extends JsonResource
             'base_price' => $this->base_price,
             'sale_price' => $this->sale_price,
             'status'     => $this->status,
-            'image'      => $this->whenLoaded('primarySkc',
-                fn () => $this->primarySkc?->images()?->orderBy('sort')->value('url')
-            ),
+            'image'      => $this->whenLoaded('primarySkc', fn () => ImageUrl::absolute(
+                $this->primarySkc?->images()?->orderBy('sort')->value('url')
+            )),
         ];
     }
 }

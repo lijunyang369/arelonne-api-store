@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Models\Setting;
+use App\Support\ImageUrl;
 use Illuminate\Support\Facades\DB;
 
 class CartService
@@ -144,6 +145,18 @@ class CartService
     }
 
     /**
+     * SKC → 商品图绝对 URL（CDN 基址拼装；无图返回 null）。
+     */
+    public function resolveImageUrl($skc): ?string
+    {
+        if (! $skc || $skc->images->isEmpty()) {
+            return null;
+        }
+
+        return ImageUrl::absolute($skc->images->first()->url);
+    }
+
+    /**
      * 构建购物车 API 返回数据。
      */
     private function buildCartData(Cart $cart): array
@@ -154,11 +167,8 @@ class CartService
             $price = (float) ($product?->sale_price ?? $variant->price ?? $product?->base_price ?? 0);
 
             // 按变体颜色匹配 SKC 图片（无匹配时回退主色 SKC）
-            $imageUrl = null;
             $skc = $product?->skcs?->firstWhere('color', $variant?->color) ?? $product?->primarySkc;
-            if ($skc && $skc->images->isNotEmpty()) {
-                $imageUrl = $skc->images->first()->url;
-            }
+            $imageUrl = $this->resolveImageUrl($skc);
 
             return [
                 'id'            => $item->id,
