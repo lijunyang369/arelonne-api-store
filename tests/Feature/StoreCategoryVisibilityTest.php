@@ -68,4 +68,27 @@ class StoreCategoryVisibilityTest extends TestCase
         $res = $this->getJson('/api/store/products?category=old');
         $this->assertSame(0, $res->json('meta.total'));
     }
+
+    /** 商品 API 按 active 子分类筛选时,父分类停用 → 返回空 */
+    public function test_product_filter_by_child_of_inactive_parent_returns_empty(): void
+    {
+        $parent = Category::create(['name' => 'OldParent', 'slug' => 'old-parent', 'sort' => 0, 'status' => 'inactive']);
+        $leaf = Category::create(['name' => 'Leaf', 'slug' => 'leaf', 'parent_id' => $parent->id, 'sort' => 0, 'status' => 'active']);
+        Product::create(['name' => 'P', 'slug' => 'p', 'category_id' => $leaf->id,
+            'base_price' => 10, 'status' => 'active', 'sort' => 0, 'meta' => []]);
+
+        $res = $this->getJson('/api/store/products?category=leaf');
+        $this->assertSame(0, $res->json('meta.total'));
+    }
+
+    /** 商品 API 按 active 根叶子分类(Skirts 模式)筛选 → 正常返回商品 */
+    public function test_product_filter_by_active_root_leaf_returns_products(): void
+    {
+        $leaf = Category::create(['name' => 'Skirts', 'slug' => 'skirts', 'sort' => 0, 'status' => 'active']);
+        Product::create(['name' => 'P', 'slug' => 'p', 'category_id' => $leaf->id,
+            'base_price' => 10, 'status' => 'active', 'sort' => 0, 'meta' => []]);
+
+        $res = $this->getJson('/api/store/products?category=skirts');
+        $this->assertSame(1, $res->json('meta.total'));
+    }
 }
