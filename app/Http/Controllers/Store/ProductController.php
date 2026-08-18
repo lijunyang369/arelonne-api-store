@@ -23,9 +23,13 @@ class ProductController extends Controller
             ->where('status', 'active')
             ->with(['category', 'primarySkc.images']);
 
-        // 按分类筛选
+        // 按分类筛选:分类自身与父分类都必须 active
         if ($category = $request->get('category')) {
-            $query->whereHas('category', fn ($q) => $q->where('slug', $category));
+            $query->whereHas('category', function ($q) use ($category) {
+                $q->where('slug', $category)->where('status', 'active')
+                    ->where(fn ($parent) => $parent->whereNull('parent_id')
+                        ->orWhereHas('parent', fn ($p) => $p->where('status', 'active')));
+            });
         }
 
         // 搜索

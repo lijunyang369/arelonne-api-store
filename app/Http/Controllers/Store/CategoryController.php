@@ -10,7 +10,8 @@ use Illuminate\Http\JsonResponse;
 class CategoryController extends Controller
 {
     /**
-     * 获取所有激活的分类（树形结构）。
+     * 获取前台可见分类树:根与子都必须 active;
+     * 无子分类的结构叶子(如 Skirts)保留;有子分类但 active 子全停用的根不返回(其下无可见商品,避免空集合页)。
      *
      * @return JsonResponse
      */
@@ -18,8 +19,14 @@ class CategoryController extends Controller
     {
         $categories = Category::where('status', 'active')
             ->whereNull('parent_id')
-            ->with('children')
+            ->where(function ($query) {
+                // 保留两类根:没有子分类的结构叶子;或至少有一个 active 子分类
+                $query->doesntHave('children')
+                    ->orWhereHas('children', fn ($q) => $q->where('status', 'active'));
+            })
+            ->with(['children' => fn ($q) => $q->where('status', 'active')])
             ->orderBy('sort')
+            ->orderBy('id')
             ->get();
 
         return response()->json([
